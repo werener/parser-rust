@@ -8,7 +8,8 @@ use program::Program;
 mod flags;
 use flags::Flag;
 
-
+mod stack;
+use stack::Stack;
 
 fn main() { 
     let pr = Program::new();
