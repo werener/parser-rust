@@ -1,7 +1,8 @@
 use std::env;
 
-use super::flags::Flag;
-
+use super::custom_types;
+use custom_types::flags::Flag;
+use custom_types::stack::Stack;
 pub struct Program {
     pub all_args: Vec<String>,
     pub flags: Vec<Flag>,
