@@ -1,14 +1,13 @@
 #![allow(unused_variables, dead_code, unused_imports, unused_mut)]
-mod program;
-mod custom_types;
 mod custom_functions;
+mod custom_types;
+mod program;
 
-use custom_functions::parse::parse;
+use custom_functions::shunting_yard;
 
-fn main() { 
+
+fn main() {
     let pr = program::Program::new();
-    // println!("{:?}\n{}\n", pr.all_args, pr.expression);
-
-
-    println!("{}", parse(pr.expression));
+    
+    shunting_yard::run();
 }
