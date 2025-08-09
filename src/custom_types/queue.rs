@@ -1,29 +1,29 @@
-struct Queue<T> {
+pub struct Queue<T> {
     queue: Vec<T>,
 }
 
 impl<T> Queue<T> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Queue { queue: Vec::new() }
     }
 
-    fn add(&mut self, item: T) {
+    pub fn add(&mut self, item: T) {
         self.queue.push(item)
     }
 
-    fn pop(&mut self) -> T {
+    pub fn pop(&mut self) -> T {
         self.queue.remove(0)
     }
 
-    fn length(&self) -> usize {
+    pub fn length(&self) -> usize {
         self.queue.len()
     }
     
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
 
-    fn peek(&self) -> Option<&T> {
+    pub fn peek(&self) -> Option<&T> {
         self.queue.first()
     }
 }

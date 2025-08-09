@@ -3,23 +3,23 @@ pub struct Stack<T> {
 }
 
 impl<T> Stack<T> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Stack { stack: Vec::new() }
     }
 
-    fn pop(&mut self) -> Option<T> {
+    pub fn pop(&mut self) -> Option<T> {
         self.stack.pop()
     }
 
-    fn push(&mut self, item: T) {
+    pub fn push(&mut self, item: T) {
         self.stack.push(item)
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.stack.is_empty()
     }
     
-    fn length(&self) -> usize {
+    pub fn length(&self) -> usize {
         self.stack.len()
     }
     
