@@ -24,7 +24,7 @@ pub fn preprocess(s: &String) -> String {
         ("!=", "~"),
         (">=", "@"),
         ("<=", "#"),
-    ]
+    ];
 
 
     for (i, c) in s.chars().enumerate() {
