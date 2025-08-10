@@ -27,13 +27,14 @@ impl Program {
 
         for arg in &all_args {
             if arg.starts_with("--") {
-                println!("{}", arg);
+                // println!("{}", arg);
                 match Flag::get_flag(arg) {
                     Flag::Help => flags.push(Flag::Help),
                     Flag::UserInput => flags.push(Flag::UserInput),
                     Flag::Null => panic!("Unknown flag {arg}"),
                 };
-            } else {
+            }
+            else {
                 buffer.push_str(arg);
             }
         }

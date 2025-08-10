@@ -1,3 +1,5 @@
+use super::preprocess::preprocess;
+
 type Number = f64;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -38,7 +40,7 @@ impl Operator {
 
 fn tokenize(input: &String) -> Vec<Token> {
     fn is_num(c: &char) -> bool {
-        (c >= &'0') && (c <= &'9')
+        ((c >= &'0') && (c <= &'9')) | (c == &'.')
     }
     fn make_token(input: char) -> Token {
         match input {
@@ -54,7 +56,7 @@ fn tokenize(input: &String) -> Vec<Token> {
     }
 
     let len = input.len();
-    let mut buf: String = String::new();
+    let mut buf: String = String::with_capacity(8);
 
     let mut res: Vec<Token> = Vec::with_capacity(len);
     let s: Vec<char> = input.chars().collect();
