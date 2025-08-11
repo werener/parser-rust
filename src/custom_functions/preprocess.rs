@@ -1,11 +1,12 @@
 use fancy_regex::Regex;
 
-// Подумать как реализовать унарное бинарное отрицание (по аналогии с костылем для унарного -)
+use crate::program;
+
+// Подумать как реализовать бинарное отрицание (по аналогии с костылем для унарного -)
 pub fn preprocess(s: &String) -> String {
     let mut res = s.clone();
-    res.retain(|c| !c.is_whitespace());
 
-    let replacements: = [
+    let replacements:[(&'static str, &'static str); 18]= [
         ("**", "^"),
         ("//", "/"),
         (":", "/"),
@@ -18,23 +19,46 @@ pub fn preprocess(s: &String) -> String {
         ("[", "("),
         ("}", ")"),
         ("]", ")"),
-        
+        (r"&&", "&"),
+        (r"||", "|"),
+        (")(", ")*("),
 
         // Eq to 1-symbol denomination
         ("!=", "~"),
         (">=", "@"),
         ("<=", "#"),
     ];
-
-
-    for (i, c) in s.chars().enumerate() {
-
+    for rep in replacements {
+        res = res.replace(rep.0, rep.1);
     }
+    // left-out leading zero
+    res = Regex::new(r"(?<=[^\d])\.(?=[\d])")
+        .unwrap()
+        .replace_all(&res, "0.")
+        .into_owned();
+
+    // leading unary minus
+    res = Regex::new(r"(?<=\A)-(?=[\d\(])")
+        .unwrap()
+        .replace_all(&res, "0-")
+        .into_owned();
+
+    // implicit multiplication
+    res = Regex::new(r"(?<=[)])(?=[\d])")
+        .unwrap()
+        .replace_all(&res, "*")
+        .into_owned();
+    res = Regex::new(r"(?<=[\d])(?=[\(])")
+        .unwrap()
+        .replace_all(&res, "*")
+        .into_owned();
     return res;
 }
 
 pub fn run() {
-    println!("{}", preprocess(&"[12] ** {12} + -12 - 14 - -2".to_string()).replace("/", ""));
+    let pr = program::Program::new();
+    println!("{}", preprocess(&"[12] ** {12} * -12 - 14 - -2".to_string()).replace("/", ""));
+    println!("{}", preprocess(&pr.expression));
 }
 
 // println!("{}",res);
@@ -60,7 +84,4 @@ pub fn run() {
 //     println!("{}", res.replace("/", ""));
 //     // unary minus
     
-//     res = Regex::new(r"([^\d])-(?=\d)")
-//         .unwrap()
-//         .replace_all(&res, "0-")
-//         .into_owned();
+    
