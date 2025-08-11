@@ -9,7 +9,7 @@ use custom_functions::shunting_yard;
 fn main() {
     let pr = program::Program::new();
     
-    // shunting_yard::run();
+    shunting_yard::run();
 
     custom_functions::preprocess::run();
 }

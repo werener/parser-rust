@@ -6,7 +6,7 @@ use crate::program;
 pub fn preprocess(s: &String) -> String {
     let mut res = s.clone();
 
-    let replacements:[(&'static str, &'static str); 18]= [
+    let replacements: [(&'static str, &'static str); 18] = [
         ("**", "^"),
         ("//", "/"),
         (":", "/"),
@@ -22,21 +22,23 @@ pub fn preprocess(s: &String) -> String {
         (r"&&", "&"),
         (r"||", "|"),
         (")(", ")*("),
-
         // Eq to 1-symbol denomination
-        ("!=", "~"),
+        ("!=", "`"),
         (">=", "@"),
         ("<=", "#"),
     ];
     for rep in replacements {
         res = res.replace(rep.0, rep.1);
     }
-    // left-out leading zero
+    // left-out zeroes
     res = Regex::new(r"(?<=[^\d])\.(?=[\d])")
         .unwrap()
         .replace_all(&res, "0.")
         .into_owned();
-
+    res = Regex::new(r"(?<=[\d])\.(?=[^\d])")
+        .unwrap()
+        .replace_all(&res, ".0")
+        .into_owned();
     // leading unary minus
     res = Regex::new(r"(?<=\A)-(?=[\d\(])")
         .unwrap()
@@ -57,31 +59,8 @@ pub fn preprocess(s: &String) -> String {
 
 pub fn run() {
     let pr = program::Program::new();
-    println!("{}", preprocess(&"[12] ** {12} * -12 - 14 - -2".to_string()).replace("/", ""));
-    println!("{}", preprocess(&pr.expression));
+    if pr.expression != "" {
+        println!("preprocess:");
+        println!("{}", preprocess(&pr.expression));
+    }
 }
-
-// println!("{}",res);
-//     // parenthesis
-//     res = Regex::new(r"[\[\{]")
-//         .unwrap()
-//         .replace_all(&res, "(")
-//         .into_owned();
-//     res = Regex::new(r"[\]\}]")
-//         .unwrap()
-//         .replace_all(&res, ")")
-//         .into_owned();
-
-//     // symbol unification
-//     res = res.replace("**", "*");
-//     res = res.replace("==", "=");
-//     res = res.replace("--", "+");
-//     res = Regex::new(r"(/{2}|:)")
-//         .unwrap()
-//         .replace_all(&res, "/")
-//         .into_owned();
-//     res = Regex::new(r"").unwrap().replace_all(s, "/").into_owned();
-//     println!("{}", res.replace("/", ""));
-//     // unary minus
-    
-    

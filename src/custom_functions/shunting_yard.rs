@@ -13,28 +13,31 @@ enum Token {
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Operator {
     symbol: char,
-    precedence: u8,
-    is_left_associative: bool,
-    operation: fn(Number, Number) -> Number,
+    prec: u8,
+    is_l_a: bool,
+    is_unary: bool,
+    oper: fn(Number, Number) -> Number,
 }
 
 impl Operator {
     fn new(
         symbol: char,
-        precedence: u8,
-        is_left_associative: bool,
-        operation: fn(Number, Number) -> Number,
+        prec: u8,
+        is_l_a: bool,
+        is_unary: bool,
+        oper: fn(Number, Number) -> Number,
     ) -> Token {
         Token::Op(Operator {
             symbol,
-            precedence,
-            is_left_associative,
-            operation,
+            prec,
+            is_l_a,
+            is_unary,
+            oper,
         })
     }
 
     fn apply(&self, x: Number, y: Number) -> Number {
-        (self.operation)(x, y)
+        (self.oper)(x, y)
     }
 }
 
@@ -42,13 +45,22 @@ fn tokenize(input: &String) -> Vec<Token> {
     fn is_num(c: &char) -> bool {
         ((c >= &'0') && (c <= &'9')) | (c == &'.')
     }
-    fn make_token(input: char) -> Token {
+    fn tokenize_char(input: char) -> Token {
         match input {
-            '+' => Operator::new('+', 1, true, |x, y| x + y),
-            '-' => Operator::new('-', 1, true, |x, y| x - y),
-            '*' => Operator::new('*', 2, true, |x, y| x * y),
-            '/' => Operator::new('/', 2, true, |x, y| x / y),
-            '^' => Operator::new('^', 3, false, |x, y| x.powf(y)),
+            '`' => Operator::new('`', 1, true, false, |x, y| f64::from(x != y)), //  !=
+            '@' => Operator::new('@', 1, true, false, |x, y| f64::from(x >= y)), //  >=
+            '#' => Operator::new('#', 1, true, false, |x, y| f64::from(x <= y)), //  <=
+            '>' => Operator::new('>', 1, true, false, |x, y| f64::from(x > y)),
+            '<' => Operator::new('<', 1, true, false, |x, y| f64::from(x < y)),
+
+            '+' => Operator::new('+', 2, true, false, |x, y| x + y),
+            '-' => Operator::new('-', 2, true, false, |x, y| x - y),
+
+            '*' => Operator::new('*', 3, true, false, |x, y| x * y),
+            '/' => Operator::new('/', 3, true, false, |x, y| x / y),
+            '%' => Operator::new('%', 3, true, false, |x, y| x % y),
+
+            '^' => Operator::new('^', 4, false, false, |x, y| x.powf(y)),
             '(' => Token::LeftParen,
             ')' => Token::RightParen,
             _ => panic!("Unknown operator {input}"),
@@ -64,25 +76,38 @@ fn tokenize(input: &String) -> Vec<Token> {
     for (i, c) in s.iter().enumerate() {
         if is_num(c) {
             buf.push(*c);
-            if (i >= len) | (!is_num(&s[i + 1])) {
+            if i >= len - 1 {
                 res.push(Token::Num(buf.parse::<Number>().expect("never")));
                 buf.clear();
+            } else {
+                if !is_num(&s[i + 1]) {
+                    res.push(Token::Num(buf.parse::<Number>().expect("never")));
+                    buf.clear();
+                }
             }
         } else {
-            res.push(make_token(*c))
+            res.push(tokenize_char(*c))
         }
     }
     return res;
 }
 
 pub fn run() {
-    let a = tokenize(&"123+785*2(13)".to_string());
+    println!("shunting yard:");
+    let a = tokenize(&preprocess(&"12((2.3%3).3 + 12.2) - 17.(12)".to_string()));
     for x in a {
         if let Token::Num(value) = x {
-            println!("{}", value)
+            print!("{}", value)
         }
         if let Token::Op(operator) = x {
-            println!("{}", operator.symbol)
+            print!("{}", operator.symbol)
+        }
+        if let Token::LeftParen = x {
+            print!("(")
+        }
+        if let Token::RightParen = x {
+            print!(")")
         }
     }
+    println!();
 }
