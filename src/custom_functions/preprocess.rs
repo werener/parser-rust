@@ -30,6 +30,25 @@ pub fn preprocess(s: &String) -> String {
     for rep in replacements {
         res = res.replace(rep.0, rep.1);
     }
+
+    // closing missing parenthesis
+    {
+        let mut unclosed_paren: i32 = 0;
+        for ch in res.chars() {
+            if ch == '(' {
+                unclosed_paren += 1;
+            }
+            if ch == ')' {
+                unclosed_paren -= 1;
+            }
+        }
+        if unclosed_paren > 0 {
+            for _ in 0..unclosed_paren {
+                res.push(')');
+            }
+        }
+    };
+
     // left-out zeroes
     res = Regex::new(r"(?<=[^\d])\.(?=[\d])")
         .unwrap()
@@ -39,12 +58,15 @@ pub fn preprocess(s: &String) -> String {
         .unwrap()
         .replace_all(&res, ".0")
         .into_owned();
-    // leading unary minus
+    // unary minuses
     res = Regex::new(r"(?<=\A)-(?=[\d\(])")
         .unwrap()
         .replace_all(&res, "0-")
         .into_owned();
-
+    // res = Regex::new(r"(?<=[^\d])-(?=[\d\(])")
+    //     .unwrap()
+    //     .replace_all(&res, "~")
+    //     .into_owned();
     // implicit multiplication
     res = Regex::new(r"(?<=[)])(?=[\d])")
         .unwrap()
