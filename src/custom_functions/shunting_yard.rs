@@ -39,20 +39,15 @@ impl Operator {
 #[derive(Debug, Clone, PartialEq)]
 struct Function {
     name: String,
-    function: fn(args: &[Number]) -> Result<f64, &'static str>,
+    function: fn(args: Number) -> Number,
 }
 impl Function {
-    fn new(name: String, function: fn(&[Number]) -> Result<f64, &'static str>) -> Token {
+    fn new(name: String, function: fn(Number) -> Number) -> Token {
         Token::Func(Function { name, function })
     }
 
-    fn apply(&self, args: &[Number]) -> Number {
-        let application_result: Result<f64, &'static str> = (self.function)(args);
-        match application_result {
-            Ok(res) => return res,
-            Err(e) => panic!("Error: {e:?}"),
-        }
-        
+    fn apply(&self, arg: Number) -> Number {
+        (self.function)(arg)        
     }
 }
 
@@ -78,9 +73,9 @@ fn tokenize_operator(input: char) -> Token {
     }
 }
 
-fn tokenize_function(input: &str) -> Token{
-    match input {
-        "sin"  => Function::new(input.to_string(), sf::sin),
+fn tokenize_function(input: &String) -> Token{
+    match input.as_str() {
+        "sin"  => Function::new(input.to_string(), |x| x.sin()),
         _ => panic!("Unknown function {input}"),
     }
 }
@@ -93,6 +88,9 @@ fn tokenize(input: &String) -> Vec<Token> {
     fn is_op(input: &char) -> bool {
         "`@#><+-*/%^()".contains(*input)
     }
+    // fn is_char(c: &char) -> bool {
+    //     ((c >= &'a') && (c <= &'z')) | ((c >= &'A') && (c <= &'Z'))
+    // }
 
     let len = input.len();
     let mut buf_num: String = String::with_capacity(8);
@@ -104,6 +102,10 @@ fn tokenize(input: &String) -> Vec<Token> {
     for (i, ch) in s.iter().enumerate() {
         // is part of a number
         if is_num(ch) {
+            if buf_func != "" {
+                res.push(tokenize_function(&buf_func));
+                buf_func.clear();
+            }
             buf_num.push(*ch);
         }
         // is an operator
@@ -112,10 +114,10 @@ fn tokenize(input: &String) -> Vec<Token> {
                 res.push(Token::Num(buf_num.parse::<Number>().expect(&buf_num)));
                 buf_num.clear();
             }
-            // if buf_func != "" {
-            //     res.push(tokenize_function(buf_func));
-            //     buf_func.clear();
-            // }
+            if buf_func != "" {
+                res.push(tokenize_function(&buf_func));
+                buf_func.clear();
+            }
             res.push(tokenize_operator(*ch))
         }
         // is part of a function
@@ -132,19 +134,22 @@ fn tokenize(input: &String) -> Vec<Token> {
 
 pub fn run() {
     println!("shunting yard:");
-    let a = tokenize(&preprocess(&"12(((2.3%3).3 + 12.2) - 17.(12)".to_string()));
+    let a = tokenize(&preprocess(&"12*sin(3)".to_string()));
     for x in a {
         if let Token::Num(value) = x {
-            print!("{}", value)
+            print!("{}", value);
         }
         if let Token::Op(operator) = x {
             print!("{}", operator.symbol)
         }
         if let Token::LeftParen = x {
-            print!("(")
+            print!("(");
         }
         if let Token::RightParen = x {
-            print!(")")
+            print!(")");
+        }
+        if let Token::Func(function) = x {
+            print!("{}", function.name);
         }
     }
     println!();
