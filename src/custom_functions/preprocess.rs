@@ -1,17 +1,19 @@
 use fancy_regex::Regex;
 
-use crate::program;
-
-// Подумать как реализовать бинарное отрицание (по аналогии с костылем для унарного -)
 pub fn preprocess(s: &String) -> String {
     let mut res = s.clone();
 
-    let replacements: [(&'static str, &'static str); 17] = [
+    let replacements: [(&'static str, &'static str); 24] = [
+        // symbol unification
         ("**", "^"),
         ("//", "/"),
         (":", "/"),
+        ("÷", "/"),
+        ("×", "*"),
+        ("−", "-"),
         ("==", "="),
-        // (",", "."),
+
+        // костыли
         ("--", "+"),
         (" ", ""),
         ("_", ""),
@@ -22,10 +24,15 @@ pub fn preprocess(s: &String) -> String {
         (r"&&", "&"),
         (r"||", "|"),
         (")(", ")*("),
+        ("E", "*10"),
+        // constants
+        ("pi", "3.141592653589793"),
+        ("π", "3.141592653589793"),
+        ("e", "2.718281828459045"),
         // Eq to 1-symbol denomination
-        ("!=", "`"),
-        (">=", "@"),
-        ("<=", "#"),
+        ("!=", "≠"),
+        (">=", "⪖"),
+        ("<=", "⪕"),
     ];
     for rep in replacements {
         res = res.replace(rep.0, rep.1);
@@ -82,12 +89,4 @@ pub fn preprocess(s: &String) -> String {
         .replace_all(&res, "*")
         .into_owned();
     return res;
-}
-
-pub fn run() {
-    let pr = program::Program::new();
-    if pr.expression != "" {
-        println!("preprocess:");
-        println!("{}", preprocess(&pr.expression));
-    }
 }

@@ -1,54 +1,58 @@
 use std::env;
 
-use super::custom_types;
-use custom_types::flags::Flag;
+use crate::custom_functions;
 
-use super::custom_functions;
+use {custom_functions::preprocess::preprocess, custom_functions::shunting_yard::infix_to_postfix};
 pub struct Program {
-    pub all_args: Vec<String>,
-    pub flags: Vec<Flag>,
     pub expression: String,
 }
 
 impl Program {
     pub fn new() -> Self {
-        let construct: (Vec<String>, Vec<Flag>, String) = Program::handle_args();
         Program {
-            all_args: construct.0,
-            flags: construct.1,
-            expression: construct.2,
+            expression: Program::handle_args(),
         }
     }
-
-    fn handle_args() -> (Vec<String>, Vec<Flag>, String) {
+    fn handle_args() -> String {
         let all_args: Vec<String> = env::args().skip(1).collect();
-        let mut flags: Vec<Flag> = Vec::with_capacity(2);
-        let mut buffer: String = String::new();
-
+        let mut expr: String = String::new();
         for arg in &all_args {
-            if arg.starts_with("--") {
-                // println!("{}", arg);
-                match Flag::get_flag(arg) {
-                    Flag::Help => flags.push(Flag::Help),
-                    Flag::UserInput => flags.push(Flag::UserInput),
-                    Flag::Null => panic!("Unknown flag {arg}"),
-                };
-            }
-            else {
-                buffer.push_str(arg);
-            }
+            expr.push_str(arg);
         }
-        return (all_args, flags, buffer);
+        return expr;
     }
 
-    fn help() {
-        println!("Help lord penius");
-        println!("Avaliable flags:")
-    }
+    pub fn run(&self) {}
 
-    fn input() {
-        // continuous input mode
-    }
+    pub fn test() {
+        let tests = [
+            ("3 * 4", "3 4 * "),
+            ("12*sin(23)", "12 23 sin * "),
+            (
+                "3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
+                "3 4 2 * 1 5 - 2 3 ^ ^ / + ",
+            ),
+            (
+                "sin ( max ( 2, 3 ) ÷ 3 × π )",
+                "2 3 max 3 / 3.141592653589793 * sin ",
+            ),
+            ("21 * (214 / 2) >= 7^3", "21 214 2 / * 7 3 ^ ⪖ "),
+        ];
 
-    fn run() {}
+        println!("Testing:");
+        for (i, test) in tests.iter().enumerate() {
+            println!("#{}:  {}", i + 1, &preprocess(&test.0.to_string()));
+        }
+        println!();
+
+        for (i, test) in tests.iter().enumerate() {
+            let infix: &'static str = test.0;
+            let postfix: &'static str = test.1;
+
+            let mut check: String = infix_to_postfix(&infix.to_string());
+
+            assert_eq!(check, postfix.to_string());
+            println!("test #{}\n infix: {infix}\n postfix: {postfix}\n", i + 1)
+        }
+    }
 }

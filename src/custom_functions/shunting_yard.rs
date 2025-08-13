@@ -1,10 +1,7 @@
-use crate::custom_types::queue;
-
-use {crate::custom_functions, crate::custom_types, custom_functions::supported_functions as sf};
+use {crate::custom_functions, custom_functions::supported_functions as sf};
 
 use custom_functions::preprocess::preprocess;
 
-use {custom_types::queue::Queue, custom_types::stack::Stack};
 type Number = f64;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,23 +39,23 @@ impl Operator {
 #[derive(Debug, Clone, PartialEq)]
 struct Function {
     name: String,
-    function: fn(args: Number) -> Number,
+    function: fn(arg1: Number, arg2: Number) -> Number,
 }
 impl Function {
-    fn new(name: String, function: fn(Number) -> Number) -> Token {
+    fn new(name: String, function: fn(Number, Number) -> Number) -> Token {
         Token::Func(Function { name, function })
     }
 
-    fn apply(&self, arg: Number) -> Number {
-        (self.function)(arg)
+    fn apply(&self, arg1: Number, arg2: Number) -> Number {
+        (self.function)(arg1, arg2)
     }
 }
 
 fn tokenize_operator(input: char) -> Token {
     match input {
-        '`' => Operator::new('`', 1, true, |x, y| f64::from(x != y)), //  !=
-        '@' => Operator::new('@', 1, true, |x, y| f64::from(x >= y)), //  >=
-        '#' => Operator::new('#', 1, true, |x, y| f64::from(x <= y)), //  <=
+        '≠' => Operator::new('≠', 1, true, |x, y| f64::from(x != y)), //  !=
+        '⪖' => Operator::new('⪖', 1, true, |x, y| f64::from(x >= y)), //  >=
+        '⪕' => Operator::new('⪕', 1, true, |x, y| f64::from(x <= y)), //  <=
         '>' => Operator::new('>', 1, true, |x, y| f64::from(x > y)),
         '<' => Operator::new('<', 1, true, |x, y| f64::from(x < y)),
 
@@ -79,10 +76,14 @@ fn tokenize_operator(input: char) -> Token {
 
 fn tokenize_function(input: &String) -> Token {
     match input.as_str() {
-        "sin" => Function::new(input.to_string(), |x| x.sin()),
-        "cos" => Function::new(input.to_string(), |x| x.cos()),
-        "tan" | "tg" | "tang" => Function::new(input.to_string(), |x| x.tan()),
-        "ctan" | "ctg" | "cot" => Function::new(input.to_string(), |x| x.cos() / x.sin()),
+        "sin" => Function::new(input.to_string(), |x: f64, y| x.sin()),
+        "cos" => Function::new(input.to_string(), |x: f64, y| x.cos()),
+        "tan" | "tg" | "tang" => Function::new(input.to_string(), |x, y| x.tan()),
+        "ctan" | "ctg" | "cot" => Function::new(input.to_string(), |x, y| x.cos() / x.sin()),
+        "max" => Function::new(input.to_string(), |x: f64, y: f64| if x>y {x} else {y}),
+        "min" => Function::new(input.to_string(), |x: f64, y: f64| if x<y {x} else {y}),
+        "abs" => Function::new(input.to_string(), |x: f64, y: f64| x.abs()),
+
         _ => panic!("Unknown function {input}"),
     }
 }
@@ -92,7 +93,7 @@ fn tokenize(input: &String) -> Vec<Token> {
         ((c >= &'0') && (c <= &'9')) | (c == &'.')
     }
     fn is_op(input: &char) -> bool {
-        "`@#><+-*/%^(),".contains(*input)
+        "`@#><+-*/%^(),⪖⪕≠~'".contains(*input)
     }
 
     let len = input.len();
@@ -189,48 +190,22 @@ fn shunting_yard(tokens: Vec<Token>) -> Vec<Token> {
     return output;
 }
 
-pub fn run() {
-    let tests = [
-        ("3 * 4", "3 4 * "),
-        ("12*sin(23)", "12 23 sin * "),
-        (
-            "3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3",
-            "3 4 2 * 1 5 - 2 3 ^ ^ / + ",
-        ),
-    ];
+pub fn infix_to_postfix(infix: &String) -> String {
+    let postfix: Vec<Token> = shunting_yard(tokenize(&preprocess(&infix.to_string())));
+    let mut res: String = String::new();
 
-    for test in tests {
-        println!("{}", &preprocess(&test.0.to_string()));
-        // let b = tokenize(&preprocess(&test.0.to_string()));
-        // for x in b {
-        //     if let Token::Num(a) = x {
-        //         println!("{}", a);
-        //     }
-        // }
+    for token in postfix {
+        let addition = match token {
+            Token::Num(value) => value.to_string(),
+            Token::Op(operator) => operator.symbol.to_string(),
+            Token::Comma => ",".to_string(),
+            Token::LeftParen => "(".to_string(),
+            Token::RightParen => ")".to_string(),
+            Token::Func(function) => function.name,
+        };
+        res += addition.as_str();
+        res += " "
     }
-    println!();
-
-    for (i, test) in tests.iter().enumerate() {
-        let prefix: &'static str = test.0;
-        let postfix: &'static str = test.1;
-
-        let resulting_postfix: Vec<Token> =
-            shunting_yard(tokenize(&preprocess(&prefix.to_string())));
-        let mut check: String = String::new();
-
-        for token in resulting_postfix {
-            let addition = match token {
-                Token::Num(value) => value.to_string(),
-                Token::Op(operator) => operator.symbol.to_string(),
-                Token::Comma => ",".to_string(),
-                Token::LeftParen => "(".to_string(),
-                Token::RightParen => ")".to_string(),
-                Token::Func(function) => function.name,
-            };
-            check += addition.as_str();
-            check += " "
-        }
-        assert_eq!(check, postfix.to_string());
-        println!("test #{} {prefix} -> {postfix}", i + 1)
-    }
+    return res;
 }
+
