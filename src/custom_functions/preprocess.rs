@@ -6,12 +6,12 @@ use crate::program;
 pub fn preprocess(s: &String) -> String {
     let mut res = s.clone();
 
-    let replacements: [(&'static str, &'static str); 18] = [
+    let replacements: [(&'static str, &'static str); 17] = [
         ("**", "^"),
         ("//", "/"),
         (":", "/"),
         ("==", "="),
-        (",", "."),
+        // (",", "."),
         ("--", "+"),
         (" ", ""),
         ("_", ""),
@@ -45,6 +45,11 @@ pub fn preprocess(s: &String) -> String {
         if unclosed_paren > 0 {
             for _ in 0..unclosed_paren {
                 res.push(')');
+            }
+        }
+        if unclosed_paren < 0 {
+            for _ in 0..-unclosed_paren {
+                res.insert(0,'(');
             }
         }
     };

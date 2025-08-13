@@ -23,7 +23,10 @@ impl<T> Stack<T> {
         self.stack.len()
     }
     
-    fn peek(&self) -> Option<&T> {
-        self.stack.last()
+    pub fn peek(&self) -> &T {
+        match self.stack.last() {
+            Some(v) => v,
+            None => panic!(),
+        }
     }
 }

@@ -7,7 +7,7 @@ impl<T> Queue<T> {
         Queue { queue: Vec::new() }
     }
 
-    pub fn add(&mut self, item: T) {
+    pub fn put(&mut self, item: T) {
         self.queue.push(item)
     }
 
