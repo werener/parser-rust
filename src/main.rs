@@ -4,8 +4,7 @@ mod program;
 
 use custom_functions::shunting_yard;
 
-
 fn main() {
-    let prog = program::Program::new();
-    program::Program::test();
+    program::run();
+    // program::test(false);
 }

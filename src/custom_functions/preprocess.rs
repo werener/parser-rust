@@ -1,43 +1,10 @@
 use fancy_regex::Regex;
 
 pub fn preprocess(s: &String) -> String {
-    let mut res = s.clone();
-
-    let replacements: [(&'static str, &'static str); 24] = [
-        // symbol unification
-        ("**", "^"),
-        ("//", "/"),
-        (":", "/"),
-        ("÷", "/"),
-        ("×", "*"),
-        ("−", "-"),
-        ("==", "="),
-
-        // костыли
-        ("--", "+"),
-        (" ", ""),
-        ("_", ""),
-        ("{", "("),
-        ("[", "("),
-        ("}", ")"),
-        ("]", ")"),
-        (r"&&", "&"),
-        (r"||", "|"),
-        (")(", ")*("),
-        ("E", "*10"),
-        // constants
-        ("pi", "3.141592653589793"),
-        ("π", "3.141592653589793"),
-        ("e", "2.718281828459045"),
-        // Eq to 1-symbol denomination
-        ("!=", "≠"),
-        (">=", "⪖"),
-        ("<=", "⪕"),
-    ];
-    for rep in replacements {
-        res = res.replace(rep.0, rep.1);
+    let mut res: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    if res == "" {
+        panic!("No expression given")
     }
-
     // closing missing parenthesis
     {
         let mut unclosed_paren: i32 = 0;
@@ -56,10 +23,53 @@ pub fn preprocess(s: &String) -> String {
         }
         if unclosed_paren < 0 {
             for _ in 0..-unclosed_paren {
-                res.insert(0,'(');
+                res.insert(0, '(');
             }
         }
     };
+
+    // implicit multiplication
+    res = Regex::new(r"(?<=[\d])(?=[a-zA-Z])")
+        .unwrap()
+        .replace_all(&res, "*")
+        .into_owned();
+    res = Regex::new(r"(?<=[\)])(?=[a-zA-Z])")
+        .unwrap()
+        .replace_all(&res, "*")
+        .into_owned();
+
+    let replacements: [(&'static str, &'static str); 22] = [
+        // symbol unification
+        ("**", "^"),
+        ("//", "/"),
+        (":", "/"),
+        ("÷", "/"),
+        ("×", "*"),
+        ("−", "-"),
+        ("==", "="),
+        // костыли
+        ("--", "+"),
+        ("{", "("),
+        ("[", "("),
+        ("}", ")"),
+        ("]", ")"),
+        (")(", ")*("),
+        ("E", "*10"),
+        // constants
+        ("pi", "3.141592653589793"),
+        ("π", "3.141592653589793"),
+        ("e", "2.718281828459045"),
+        // Boolean
+        ("!=", "≠"),
+        (">=", "⪖"),
+        ("<=", "⪕"),
+        (r"&&", "&"),
+        (r"||", "|"),
+    ];
+
+    for rep in replacements {
+        res = res.replace(rep.0, rep.1);
+    }
 
     // left-out zeroes
     res = Regex::new(r"(?<=[^\d])\.(?=[\d])")
@@ -73,13 +83,13 @@ pub fn preprocess(s: &String) -> String {
     // unary minuses
     res = Regex::new(r"(?<=\A)-(?=[\d\(])")
         .unwrap()
-        .replace_all(&res, "0-")
+        .replace_all(&res, "~")
         .into_owned();
-    // res = Regex::new(r"(?<=[^\d])-(?=[\d\(])")
-    //     .unwrap()
-    //     .replace_all(&res, "~")
-    //     .into_owned();
-    // implicit multiplication
+    res = Regex::new(r"(?<=[^\d])-(?=[\d\(])")
+        .unwrap()
+        .replace_all(&res, "~")
+        .into_owned();
+    // more implicit multiplication
     res = Regex::new(r"(?<=[)])(?=[\d])")
         .unwrap()
         .replace_all(&res, "*")

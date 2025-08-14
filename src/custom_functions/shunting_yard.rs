@@ -1,4 +1,4 @@
-use {crate::custom_functions, custom_functions::supported_functions as sf};
+use {crate::custom_functions, std::f64::consts::PI};
 
 use custom_functions::preprocess::preprocess;
 
@@ -39,20 +39,28 @@ impl Operator {
 #[derive(Debug, Clone, PartialEq)]
 struct Function {
     name: String,
+    arg_amount: u8,
     function: fn(arg1: Number, arg2: Number) -> Number,
 }
 impl Function {
-    fn new(name: String, function: fn(Number, Number) -> Number) -> Token {
-        Token::Func(Function { name, function })
+    fn new(name: String, arg_amount: u8, function: fn(Number, Number) -> Number) -> Token {
+        Token::Func(Function {
+            name,
+            arg_amount,
+            function,
+        })
     }
 
     fn apply(&self, arg1: Number, arg2: Number) -> Number {
         (self.function)(arg1, arg2)
     }
 }
-
 fn tokenize_operator(input: char) -> Token {
     match input {
+        '&' => Operator::new('&', 0, false, |x, y| f64::from((x != 0.) && (y != 0.))),
+        '|' => Operator::new('|', 0, false, |x, y| f64::from((x != 0.) || (y != 0.))),
+        '!' => Operator::new('!', 0, false, |x, y| f64::from(x == 0.)),
+
         '≠' => Operator::new('≠', 1, true, |x, y| f64::from(x != y)), //  !=
         '⪖' => Operator::new('⪖', 1, true, |x, y| f64::from(x >= y)), //  >=
         '⪕' => Operator::new('⪕', 1, true, |x, y| f64::from(x <= y)), //  <=
@@ -67,6 +75,8 @@ fn tokenize_operator(input: char) -> Token {
         '%' => Operator::new('%', 3, true, |x, y| x % y),
 
         '^' => Operator::new('^', 4, false, |x, y| x.powf(y)),
+        '~' => Operator::new('~', 4, false, |x, y| -x),
+
         '(' => Token::LeftParen,
         ')' => Token::RightParen,
         ',' => Token::Comma,
@@ -76,13 +86,60 @@ fn tokenize_operator(input: char) -> Token {
 
 fn tokenize_function(input: &String) -> Token {
     match input.as_str() {
-        "sin" => Function::new(input.to_string(), |x: f64, y| x.sin()),
-        "cos" => Function::new(input.to_string(), |x: f64, y| x.cos()),
-        "tan" | "tg" | "tang" => Function::new(input.to_string(), |x, y| x.tan()),
-        "ctan" | "ctg" | "cot" => Function::new(input.to_string(), |x, y| x.cos() / x.sin()),
-        "max" => Function::new(input.to_string(), |x: f64, y: f64| if x>y {x} else {y}),
-        "min" => Function::new(input.to_string(), |x: f64, y: f64| if x<y {x} else {y}),
-        "abs" => Function::new(input.to_string(), |x: f64, y: f64| x.abs()),
+        "sin" => Function::new(input.to_string(), 1, |x: f64, y| x.sin()),
+        "cos" => Function::new(input.to_string(), 1, |x: f64, y| x.cos()),
+        "tan" | "tg" | "tang" => Function::new(input.to_string(), 1, |x, y| x.tan()),
+        "ctan" | "ctg" | "cot" => Function::new(input.to_string(), 1, |x, y| 1. / x.tan()),
+
+        "sec" | "sc"  => Function::new(input.to_string(), 1, |x: f64, y| 1. / x.sin()),
+        "csc" | "csec" | "cosec" | "cosc" => Function::new(input.to_string(), 1, |x: f64, y| 1. / x.cos()),
+
+        "sinh" => Function::new(input.to_string(), 1, |x: f64, y| x.sinh()),
+        "cosh" => Function::new(input.to_string(), 1, |x: f64, y| x.cosh()),
+        "tanh" | "tgh" | "tangh" => Function::new(input.to_string(), 1, |x, y| x.tanh()),
+        "ctanh" | "ctgh" | "coth" => Function::new(input.to_string(), 1, |x, y| 1. / x.tanh()),
+
+        "asin" | "arcsin" => Function::new(input.to_string(), 1, |x: f64, y| x.asin()),
+        "acos" | "arccos" => Function::new(input.to_string(), 1, |x: f64, y| x.acos()),
+        "atan" | "atg" | "atang" | "arctan" | "arctg" | "arctang" => {
+            Function::new(input.to_string(), 1, |x, y| x.atan())
+        }
+        "actan" | "actg" | "acot" | "arcctan" | "arcctg" | "arccot" => {
+            Function::new(input.to_string(), 1, |x, y| PI / 2. - x.atan())
+        }
+
+        "asinh" | "arcsinh" => Function::new(input.to_string(), 1, |x: f64, y| x.asinh()),
+        "acosh" | "arccosh" => Function::new(input.to_string(), 1, |x: f64, y| x.acosh()),
+        "atanh" | "atgh" | "atangh" | "arctanh" | "arctgh" | "arctangh" => {
+            Function::new(input.to_string(), 1, |x, y| x.atan())
+        }
+        "actanh" | "actgh" | "acoth" | "arcctanh" | "arcctgh" | "arccoth" => {
+            Function::new(input.to_string(), 1, |x, y| (1. / x).atanh())
+        }
+
+        "abs" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.abs()),
+
+        "ln" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.ln()),
+        "lg" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.log10()),
+        "lb" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.log2()),
+
+        "sqrt" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.sqrt()),
+        "cbrt" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.cbrt()),
+
+        "log" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.log(y)),
+        "root" | "rt" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.powf(1. / y)),
+
+        "pow" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.powf(y)),
+        "max" => Function::new(
+            input.to_string(),
+            2,
+            |x: f64, y: f64| if x > y { x } else { y },
+        ),
+        "min" => Function::new(
+            input.to_string(),
+            2,
+            |x: f64, y: f64| if x < y { x } else { y },
+        ),
 
         _ => panic!("Unknown function {input}"),
     }
@@ -209,3 +266,74 @@ pub fn infix_to_postfix(infix: &String) -> String {
     return res;
 }
 
+fn evaluate_postfix(expression: Vec<Token>) -> (Number, bool) {
+    let mut stack: Vec<Number> = Vec::new();
+    let mut result_is_boolean: bool = false;
+    for token in expression {
+        match token {
+            Token::Num(n) => stack.push(n),
+            Token::Op(operator) => {
+                match operator.symbol {
+                    // unary
+                    '~' | '!' => {
+                        let operand = stack.pop();
+                        match operand {
+                            Some(v) => stack.push(operator.apply(v, 0.0)),
+                            None => {
+                                panic!("Evaluation error: unary operator '{}' doesn't have an operand", operator.symbol)
+                            }
+                        }
+                    }
+                    // binary
+                    _ => {
+                        let op_right = stack.pop();
+                        let op_left = stack.pop();
+                        match op_left {
+                            Some(op_left) => {
+                                stack.push(operator.apply(op_left, op_right.expect("")));
+                            }
+                            None => {
+                                panic!("Evaluation error: binary operator '{}' lacks an operand", operator.symbol)
+                            }
+                        }
+                    }
+                };
+                if !result_is_boolean & "|&!≠⪖⪕><".contains(operator.symbol) {
+                    result_is_boolean = true;
+                }
+            }
+            Token::Func(func) => match func.arg_amount {
+                1 => {
+                    let arg = stack.pop();
+
+                    match arg {
+                        Some(arg) => stack.push(func.apply(arg, 0.)),
+                        None => {
+                            panic!("Evaluation error: function '{}' lacks an argument", func.name)
+                        }
+                    }
+                }
+                2 => {
+                    let arg1 = stack.pop();
+                    let arg2 = stack.pop();
+                    match arg2 {
+                        Some(arg2) => stack.push(func.apply(arg1.expect(""), arg2)),
+                        None => {
+                            panic!("Evaluation error: function '{}' needs 2 arguments", func.name)
+                        }
+                    }
+                }
+                _ => {}
+            },
+            _ => panic!("Unsupported token in postfix"),
+        }
+    }
+    match stack.pop() {
+        Some(v) => return (v, result_is_boolean),
+        None => panic!("Unsupported expression! Couldn't evaluate"),
+    }
+}
+
+pub fn eval(s: &str) -> (Number, bool) {
+    return evaluate_postfix(shunting_yard(tokenize(&preprocess(&s.to_string()))));
+}
