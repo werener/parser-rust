@@ -15,10 +15,17 @@ fn handle_args() -> String {
 
 pub fn run() {
     let res: (f64, bool) = eval(&handle_args());
+    let r = (res.0 * 10_000_000_f64).round() / 10_000_000_f64;
     if res.1 {
-        println!("{:.10}", res.0 == 1.);
-    } else {
-        println!("{:.10}", res.0);
+        println!("{}", res.0 == 1.);
+    } 
+    else {
+        if r == 0.{
+            println!("0");
+        }
+        else {
+            println!("{r}");
+        }
     };
 }
 
@@ -37,11 +44,10 @@ pub fn test(with_postfix: bool) {
         ("2^3 * 3", "2 3 ^ 3 * ", 24.),
         ("-2^3 * 3 + 2**2", "2 3 ^ ~ 3 * 2 2 ^ + ", -20.),
         ("17 * -2 + 21**2", "17 2 ~ * 21 2 ^ + ", 407.),
-        ("sin(2pi)", "", 0.),
-        ("cos(pi/2)sin(2pi)", "", 0.),
-        ("cos(pi) ^ 2 + sin(pi) ^ 2", "", 1.),
+        ("sin(2pi)", "2 3.141592653589793 * sin ", 0.),
+        ("cos(pi/2)sin(2pi)", "3.141592653589793 2 / cos 2 3.141592653589793 * sin * ", 0.),
+        ("cos(pi) ^ 2 + sin(pi) ^ 2", "3.141592653589793 cos 2 ^ 3.141592653589793 sin 2 ^ + ", 1.),
     ];
-
     print!("Testing...");
     for (i, test) in tests.iter().enumerate() {
         let infix: &'static str = test.0;

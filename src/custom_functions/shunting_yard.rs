@@ -150,7 +150,7 @@ fn tokenize(input: &String) -> Vec<Token> {
         ((c >= &'0') && (c <= &'9')) | (c == &'.')
     }
     fn is_op(input: &char) -> bool {
-        "`@#><+-*/%^(),⪖⪕≠~'".contains(*input)
+        "`@#><+-*/%^(),⪖⪕≠~'|&!".contains(*input)
     }
 
     let len = input.len();

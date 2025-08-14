@@ -85,7 +85,7 @@ pub fn preprocess(s: &String) -> String {
         .unwrap()
         .replace_all(&res, "~")
         .into_owned();
-    res = Regex::new(r"(?<=[^\d])-(?=[\d\(])")
+    res = Regex::new(r"(?<=[^0-9)])-(?=[\d\(])")
         .unwrap()
         .replace_all(&res, "~")
         .into_owned();
