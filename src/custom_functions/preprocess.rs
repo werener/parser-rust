@@ -38,7 +38,7 @@ pub fn preprocess(s: &String) -> String {
         .replace_all(&res, "*")
         .into_owned();
 
-    let replacements: [(&'static str, &'static str); 22] = [
+    let replacements: [(&'static str, &'static str); 24] = [
         // symbol unification
         ("**", "^"),
         ("//", "/"),
@@ -54,17 +54,21 @@ pub fn preprocess(s: &String) -> String {
         ("}", ")"),
         ("]", ")"),
         (")(", ")*("),
-        ("E", "*10"),
-        // constants
-        ("pi", "3.141592653589793"),
-        ("π", "3.141592653589793"),
-        ("e", "2.718281828459045"),
+        ("E", "10^"),
         // Boolean
         ("!=", "≠"),
         (">=", "⪖"),
         ("<=", "⪕"),
         (r"&&", "&"),
         (r"||", "|"),
+        (r"false", "0"),
+        (r"true", "1"),
+        // constants
+        ("pi", "3.141592653589793"),
+        ("π", "3.141592653589793"),
+        ("e", "2.718281828459045"),
+        
+        
     ];
 
     for rep in replacements {

@@ -47,11 +47,13 @@ pub fn test(with_postfix: bool) {
         ("sin(2pi)", "2 3.141592653589793 * sin ", 0.),
         ("cos(pi/2)sin(2pi)", "3.141592653589793 2 / cos 2 3.141592653589793 * sin * ", 0.),
         ("cos(pi) ^ 2 + sin(pi) ^ 2", "3.141592653589793 cos 2 ^ 3.141592653589793 sin 2 ^ + ", 1.),
+        ("2E5", "2 10 5 ^ * ", 200000.),
     ];
     print!("Testing...");
     for (i, test) in tests.iter().enumerate() {
         let infix: &'static str = test.0;
         let preprocessed: String = preprocess(&test.0.to_string());
+        println!("{preprocessed}");
         let postfix: String = infix_to_postfix(&infix.to_string());
         let result: (f64, bool) = eval(test.0);
 

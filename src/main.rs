@@ -5,6 +5,6 @@ mod program;
 use custom_functions::shunting_yard;
 
 fn main() {
-    // program::run();
-    program::test(true);
+    program::run();
+    // program::test(true);
 }
