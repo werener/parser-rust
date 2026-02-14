@@ -3,9 +3,28 @@ use {crate::custom_functions, std::f64::consts::PI};
 use custom_functions::preprocess::preprocess;
 
 type Number = f64;
+type N = f64;
+fn factorial(x: Number) -> Number{
+    const FACTORIAL_CEILING: Number = 40.;
+    if x < 0.0 || !x.is_sign_positive() {
+        panic!("Evaluation error: factorial of {x} - a negative number")
+    }
+    else if (x - x.floor()).abs() > crate::DELTA {
+        panic!("Type error: factorial of {x} - a floating-point number")
+    }
+    else if x > FACTORIAL_CEILING {
+        panic!("Overflow error: factorial of {x} - a number, higher than {FACTORIAL_CEILING}")
+    }
+    else {
+        let n = x as u64;
+        (1..=n).fold(1.0, |acc, i| acc * (i as f64))
+    }
+    
+    
+}
 
 #[derive(Debug, Clone, PartialEq)]
-enum Token {
+pub enum Token {
     Num(Number),
     Op(Operator),
     Func(Function),
@@ -15,14 +34,14 @@ enum Token {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct Operator {
-    symbol: char,
-    prec: u8,
-    is_l_a: bool,
-    oper: fn(Number, Number) -> Number,
+pub struct Operator {
+    pub symbol: char,
+    pub prec: u8,
+    pub is_l_a: bool,
+    pub oper: fn(Number, Number) -> Number,
 }
 impl Operator {
-    fn new(symbol: char, prec: u8, is_l_a: bool, oper: fn(Number, Number) -> Number) -> Token {
+    pub fn new(symbol: char, prec: u8, is_l_a: bool, oper: fn(Number, Number) -> Number) -> Token {
         Token::Op(Operator {
             symbol,
             prec,
@@ -31,19 +50,19 @@ impl Operator {
         })
     }
 
-    fn apply(&self, x: Number, y: Number) -> Number {
+    pub fn apply(&self, x: Number, y: Number) -> Number {
         (self.oper)(x, y)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Function {
-    name: String,
-    arg_amount: u8,
-    function: fn(arg1: Number, arg2: Number) -> Number,
+pub struct Function {
+    pub name: String,
+    pub arg_amount: u8,
+    pub function: fn(arg1: Number, arg2: Number) -> Number,
 }
 impl Function {
-    fn new(name: String, arg_amount: u8, function: fn(Number, Number) -> Number) -> Token {
+    pub fn new(name: String, arg_amount: u8, function: fn(Number, Number) -> Number) -> Token {
         Token::Func(Function {
             name,
             arg_amount,
@@ -51,16 +70,18 @@ impl Function {
         })
     }
 
-    fn apply(&self, arg1: Number, arg2: Number) -> Number {
+    pub fn apply(&self, arg1: Number, arg2: Number) -> Number {
         (self.function)(arg1, arg2)
     }
 }
-fn tokenize_operator(input: char) -> Token {
+
+pub fn tokenize_operator(input: char) -> Token {
     match input {
         '&' => Operator::new('&', 0, false, |x, y| f64::from((x != 0.) && (y != 0.))),
         '|' => Operator::new('|', 0, false, |x, y| f64::from((x != 0.) || (y != 0.))),
         '!' => Operator::new('!', 0, false, |x, y| f64::from(x == 0.)),
 
+        '=' => Operator::new('=', 1, true, |x, y| f64::from(x == y)), //  !=
         '≠' => Operator::new('≠', 1, true, |x, y| f64::from(x != y)), //  !=
         '⪖' => Operator::new('⪖', 1, true, |x, y| f64::from(x >= y)), //  >=
         '⪕' => Operator::new('⪕', 1, true, |x, y| f64::from(x <= y)), //  <=
@@ -84,73 +105,64 @@ fn tokenize_operator(input: char) -> Token {
     }
 }
 
-fn tokenize_function(input: &String) -> Token {
-    match input.as_str() {
-        "sin" => Function::new(input.to_string(), 1, |x: f64, y| x.sin()),
-        "cos" => Function::new(input.to_string(), 1, |x: f64, y| x.cos()),
-        "tan" | "tg" | "tang" => Function::new(input.to_string(), 1, |x, y| x.tan()),
-        "ctan" | "ctg" | "cot" => Function::new(input.to_string(), 1, |x, y| 1. / x.tan()),
+pub fn tokenize_function(input: &String) -> Token {
+    let function: (u8, fn(x: N, y: N) -> N) = match input.as_str() {
+        "sin" => (1, |x: N, y: N| x.sin()),
+        "cos" => (1, |x: N, y: N| x.cos()),
+        "tan" | "tg" | "tang" => (1, |x: N, y: N| x.tan()),
+        "ctan" | "ctg" | "cot" => (1, |x: N, y: N| 1. / x.tan()),
 
-        "sec" | "sc"  => Function::new(input.to_string(), 1, |x: f64, y| 1. / x.sin()),
-        "csc" | "csec" | "cosec" | "cosc" => Function::new(input.to_string(), 1, |x: f64, y| 1. / x.cos()),
+        "sec" | "sc" => (1, |x: N, y: N| 1. / x.sin()),
+        "csc" | "csec" | "cosec" | "cosc" => (1, |x: N, y: N| 1. / x.cos()),
 
-        "sinh" => Function::new(input.to_string(), 1, |x: f64, y| x.sinh()),
-        "cosh" => Function::new(input.to_string(), 1, |x: f64, y| x.cosh()),
-        "tanh" | "tgh" | "tangh" => Function::new(input.to_string(), 1, |x, y| x.tanh()),
-        "ctanh" | "ctgh" | "coth" => Function::new(input.to_string(), 1, |x, y| 1. / x.tanh()),
+        "sinh" => (1, |x: N, y: N| x.sinh()),
+        "cosh" => (1, |x: N, y: N| x.cosh()),
+        "tanh" | "tgh" | "tangh" => (1, |x: N, y: N| x.tanh()),
+        "ctanh" | "ctgh" | "coth" => (1, |x: N, y: N| 1. / x.tanh()),
 
-        "asin" | "arcsin" => Function::new(input.to_string(), 1, |x: f64, y| x.asin()),
-        "acos" | "arccos" => Function::new(input.to_string(), 1, |x: f64, y| x.acos()),
-        "atan" | "atg" | "atang" | "arctan" | "arctg" | "arctang" => {
-            Function::new(input.to_string(), 1, |x, y| x.atan())
-        }
+        "asin" | "arcsin" => (1, |x: N, y: N| x.asin()),
+        "acos" | "arccos" => (1, |x: N, y: N| x.acos()),
+        "atan" | "atg" | "atang" | "arctan" | "arctg" | "arctang" => (1, |x, y| x.atan()),
         "actan" | "actg" | "acot" | "arcctan" | "arcctg" | "arccot" => {
-            Function::new(input.to_string(), 1, |x, y| PI / 2. - x.atan())
+            (1, |x, y| PI / 2. - x.atan())
         }
 
-        "asinh" | "arcsinh" => Function::new(input.to_string(), 1, |x: f64, y| x.asinh()),
-        "acosh" | "arccosh" => Function::new(input.to_string(), 1, |x: f64, y| x.acosh()),
-        "atanh" | "atgh" | "atangh" | "arctanh" | "arctgh" | "arctangh" => {
-            Function::new(input.to_string(), 1, |x, y| x.atan())
-        }
+        "asinh" | "arcsinh" => (1, |x: N, y: N| x.asinh()),
+        "acosh" | "arccosh" => (1, |x: N, y: N| x.acosh()),
+        "atanh" | "atgh" | "atangh" | "arctanh" | "arctgh" | "arctangh" => (1, |x, y| x.atan()),
         "actanh" | "actgh" | "acoth" | "arcctanh" | "arcctgh" | "arccoth" => {
-            Function::new(input.to_string(), 1, |x, y| (1. / x).atanh())
+            (1, |x, y| (1. / x).atanh())
         }
 
-        "abs" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.abs()),
+        "abs" => (1, |x: N, y: N| x.abs()),
 
-        "ln" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.ln()),
-        "lg" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.log10()),
-        "lb" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.log2()),
+        "ln" => (1, |x: N, y: N| x.ln()),
+        "lg" => (1, |x: N, y: N| x.log10()),
+        "lb" => (1, |x: N, y: N| x.log2()),
 
-        "sqrt" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.sqrt()),
-        "cbrt" => Function::new(input.to_string(), 1, |x: f64, y: f64| x.cbrt()),
+        "sqrt" => (1, |x: N, y: N| x.sqrt()),
+        "cbrt" => (1, |x: N, y: N| x.cbrt()),
 
-        "log" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.log(y)),
-        "root" | "rt" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.powf(1. / y)),
+        "fact" => (1, |x: N, y: N| factorial(x)),
 
-        "pow" => Function::new(input.to_string(), 2, |x: f64, y: f64| x.powf(y)),
-        "max" => Function::new(
-            input.to_string(),
-            2,
-            |x: f64, y: f64| if x > y { x } else { y },
-        ),
-        "min" => Function::new(
-            input.to_string(),
-            2,
-            |x: f64, y: f64| if x < y { x } else { y },
-        ),
+        "log" => (2, |x: N, y: N| x.log(y)),
+        "root" | "rt" => (2, |x: N, y: N| x.powf(1. / y)),
 
+        "pow" => (2, |x: N, y: N| x.powf(y)),
+        "max" => (2, |x: N, y: N| if x > y { x } else { y }),
+        "min" => (2, |x: N, y: N| if x < y { x } else { y }),
+        
         _ => panic!("Unknown function {input}"),
-    }
+    };
+    Function::new(input.clone(), function.0, function.1)
 }
 
-fn tokenize(input: &String) -> Vec<Token> {
+pub fn tokenize(input: &String) -> Vec<Token> {
     fn is_num(c: &char) -> bool {
         ((c >= &'0') && (c <= &'9')) | (c == &'.')
     }
     fn is_op(input: &char) -> bool {
-        "`@#><+-*/%^(),⪖⪕≠~'".contains(*input)
+        "`@#><+-*/%^(),⪖⪕≠=~'|&!".contains(*input)
     }
 
     let len = input.len();

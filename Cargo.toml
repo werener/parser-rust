@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 fancy-regex = "0.16.1"
 regex = "1.11.1"
+test-case = "3.3.1"
