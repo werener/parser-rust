@@ -1,2 +1,2 @@
 # parser-rust
-executable file to parse and evaluate expressions in bash console
+Expression evaluation via command line arguments, using Rust
