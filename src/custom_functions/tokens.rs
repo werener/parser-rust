@@ -4,23 +4,16 @@ use custom_functions::preprocess::preprocess;
 
 type Number = f64;
 type N = f64;
-fn factorial(x: Number) -> Number{
+fn factorial(x: Number) -> Number {
     const FACTORIAL_CEILING: Number = 40.;
     if x < 0.0 || !x.is_sign_positive() {
         panic!("Evaluation error: factorial of {x} - a negative number")
-    }
-    else if (x - x.floor()).abs() > crate::DELTA {
+    } else if (x - x.floor()).abs() > crate::DELTA {
         panic!("Type error: factorial of {x} - a floating-point number")
-    }
-    else if x > FACTORIAL_CEILING {
-        panic!("Overflow error: factorial of {x} - a number, higher than {FACTORIAL_CEILING}")
-    }
-    else {
+    } else {
         let n = x as u64;
         (1..=n).fold(1.0, |acc, i| acc * (i as f64))
     }
-    
-    
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -77,9 +70,9 @@ impl Function {
 
 pub fn tokenize_operator(input: char) -> Token {
     match input {
-        '&' => Operator::new('&', 0, false, |x, y| f64::from((x != 0.) && (y != 0.))),
-        '|' => Operator::new('|', 0, false, |x, y| f64::from((x != 0.) || (y != 0.))),
-        '!' => Operator::new('!', 0, false, |x, y| f64::from(x == 0.)),
+        '&' => Operator::new('&', 0, true, |x, y| f64::from((x != 0.) && (y != 0.))),
+        '|' => Operator::new('|', 0, true, |x, y| f64::from((x != 0.) || (y != 0.))),
+        '!' => Operator::new('!', 0, true, |x, y| f64::from(x == 0.)),
 
         '=' => Operator::new('=', 1, true, |x, y| f64::from(x == y)), //  !=
         '≠' => Operator::new('≠', 1, true, |x, y| f64::from(x != y)), //  !=
@@ -95,7 +88,7 @@ pub fn tokenize_operator(input: char) -> Token {
         '/' => Operator::new('/', 3, true, |x, y| x / y),
         '%' => Operator::new('%', 3, true, |x, y| x % y),
 
-        '^' => Operator::new('^', 4, false, |x, y| x.powf(y)),
+        '^' => Operator::new('^', 4, true, |x, y| x.powf(y)),
         '~' => Operator::new('~', 4, false, |x, y| -x),
 
         '(' => Token::LeftParen,
@@ -151,7 +144,7 @@ pub fn tokenize_function(input: &String) -> Token {
         "pow" => (2, |x: N, y: N| x.powf(y)),
         "max" => (2, |x: N, y: N| if x > y { x } else { y }),
         "min" => (2, |x: N, y: N| if x < y { x } else { y }),
-        
+
         _ => panic!("Unknown function {input}"),
     };
     Function::new(input.clone(), function.0, function.1)

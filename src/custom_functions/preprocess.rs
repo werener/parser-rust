@@ -2,9 +2,6 @@ use fancy_regex::Regex;
 
 pub fn preprocess(s: &String) -> String {
     let mut res: String = s.chars().filter(|c| !c.is_whitespace()).collect();
-    if res == "" {
-        panic!("No expression given")
-    }
     // closing missing parenthesis
     {
         let mut unclosed_paren: i32 = 0;
